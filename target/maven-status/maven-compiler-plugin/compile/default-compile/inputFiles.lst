@@ -1,8 +1,3 @@
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\camel\CamelBootstrap.java
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\camel\processor\SoapHeaderAuthProcessor.java
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\camel\processor\WorkerRequestProcessor.java
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\camel\processor\WorkerResponseProcessor.java
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\camel\route\SoapMessageTranslatorRoute.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\dao\JpaUtil.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\dao\UserDAO.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\dao\WorkerDAO.java
@@ -10,7 +5,6 @@ C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\worker
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\model\Worker.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\rest\ApiAuthFilter.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\rest\RestApplication.java
-C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\rest\SoapTranslatorResource.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\rest\WorkerResource.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\security\BasicAuthValidator.java
 C:\Users\youssef allani\Downloads\worker-portal\src\main\java\com\company\workerportal\security\GenerateHashTool.java
