@@ -18,18 +18,4 @@
         </cookie-config>
     </session-config>
 
-    <!-- JAX-WS SOAP endpoint. Payara requires an explicit servlet mapping
-         for a POJO @WebService class. This publishes it at:
-           http://<host>:<port>/worker-portal/WorkerSoapService
-         and its WSDL at:
-           http://<host>:<port>/worker-portal/WorkerSoapService?wsdl -->
-    <servlet>
-        <servlet-name>WorkerSoapService</servlet-name>
-        <servlet-class>com.company.workerportal.soap.WorkerSoapService</servlet-class>
-    </servlet>
-    <servlet-mapping>
-        <servlet-name>WorkerSoapService</servlet-name>
-        <url-pattern>/WorkerSoapService</url-pattern>
-    </servlet-mapping>
-
 </web-app>

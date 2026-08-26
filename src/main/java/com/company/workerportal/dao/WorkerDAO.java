@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +23,8 @@ public class WorkerDAO {
         }
     }
 
-    public List<Worker> search(String searchTerm, String role, String sortField, boolean descending) {
+    public List<Worker> search(String searchTerm, String role, String sortField, boolean descending,
+                                LocalDate dateFrom, LocalDate dateTo) {
         EntityManager em = JpaUtil.getEmf().createEntityManager();
         try {
             StringBuilder jpql = new StringBuilder("SELECT w FROM Worker w WHERE 1=1");
@@ -36,6 +38,12 @@ public class WorkerDAO {
             if (hasRole) {
                 jpql.append(" AND w.role = :role");
             }
+            if (dateFrom != null) {
+                jpql.append(" AND w.dateOfBirth >= :dateFrom");
+            }
+            if (dateTo != null) {
+                jpql.append(" AND w.dateOfBirth <= :dateTo");
+            }
 
             String field = (sortField != null && SORTABLE_FIELDS.contains(sortField)) ? sortField : "lastName";
             jpql.append(" ORDER BY w.").append(field).append(descending ? " DESC" : " ASC");
@@ -46,6 +54,12 @@ public class WorkerDAO {
             }
             if (hasRole) {
                 query.setParameter("role", role.trim());
+            }
+            if (dateFrom != null) {
+                query.setParameter("dateFrom", dateFrom);
+            }
+            if (dateTo != null) {
+                query.setParameter("dateTo", dateTo);
             }
 
             return query.getResultList();

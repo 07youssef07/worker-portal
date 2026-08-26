@@ -3,6 +3,7 @@ package com.company.workerportal.service;
 import com.company.workerportal.dao.WorkerDAO;
 import com.company.workerportal.model.Worker;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class WorkerService {
@@ -14,8 +15,9 @@ public class WorkerService {
         return workers.toArray(new Worker[0]);
     }
 
-    public Worker[] searchWorkers(String searchTerm, String role, String sortField, boolean descending) {
-        List<Worker> workers = workerDAO.search(searchTerm, role, sortField, descending);
+    public Worker[] searchWorkers(String searchTerm, String role, String sortField, boolean descending,
+                                   LocalDate dateFrom, LocalDate dateTo) {
+        List<Worker> workers = workerDAO.search(searchTerm, role, sortField, descending, dateFrom, dateTo);
         return workers.toArray(new Worker[0]);
     }
 

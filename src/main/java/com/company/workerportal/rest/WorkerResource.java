@@ -41,7 +41,7 @@ public class WorkerResource {
         if (q == null && role == null && sort == null) {
             return workerService.getAllWorkers();
         }
-        return workerService.searchWorkers(q, role, sort, descending);
+        return workerService.searchWorkers(q, role, sort, descending, null, null);
     }
 
     @GET

@@ -27,7 +27,7 @@ public class WorkersServlet extends HttpServlet {
         String dir = req.getParameter("dir");
         boolean descending = "desc".equalsIgnoreCase(dir);
 
-        Worker[] workers = workerService.searchWorkers(q, role, sort, descending);
+        Worker[] workers = workerService.searchWorkers(q, role, sort, descending, null, null);
         String[] roles = workerService.getDistinctRoles();
 
         List<Worker> workerList = Arrays.asList(workers);

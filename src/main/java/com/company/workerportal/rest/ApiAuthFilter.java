@@ -9,10 +9,6 @@ import jakarta.ws.rs.ext.Provider;
 
 import java.io.IOException;
 
-/**
- * Protects every endpoint under /api with HTTP Basic Authentication.
- * Reuses the same app_user accounts as the web login (e.g. admin/admin123).
- */
 @Provider
 public class ApiAuthFilter implements ContainerRequestFilter {
 
@@ -23,7 +19,8 @@ public class ApiAuthFilter implements ContainerRequestFilter {
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .header(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"worker-portal-api\"")
-                            .entity(new WorkerResource.ErrorMessage("Authentication required"))
+                            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .entity("{\"message\":\"Authentication required\"}")
                             .build());
         }
     }
