@@ -1,19 +1,16 @@
 package com.company.soaptranslator.camel.processor;
 
-import com.company.workerportal.model.Worker;
+import com.company.workerportal.service.WorkerDTO;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 @ApplicationScoped
 @Named("workerResponseProcessor")
 public class WorkerResponseProcessor implements Processor {
-
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -48,8 +45,8 @@ public class WorkerResponseProcessor implements Processor {
         xml.append("<workers>");
 
         Object data = result.get("data");
-        if (data instanceof Worker[] workers) {
-            for (Worker w : workers) {
+        if (data instanceof WorkerDTO[] workers) {
+            for (WorkerDTO w : workers) {
                 xml.append(workerToXml(w));
             }
         }
@@ -68,7 +65,7 @@ public class WorkerResponseProcessor implements Processor {
         xml.append("<worker>");
 
         Object data = result.get("data");
-        if (data instanceof Worker w) {
+        if (data instanceof WorkerDTO w) {
             xml.append(workerFieldsToXml(w));
         }
 
@@ -116,7 +113,7 @@ public class WorkerResponseProcessor implements Processor {
             + wrapSoapBodyEnd();
     }
 
-    private String workerToXml(Worker w) {
+    private String workerToXml(WorkerDTO w) {
         StringBuilder xml = new StringBuilder();
         xml.append("<worker>");
         xml.append(workerFieldsToXml(w));
@@ -124,12 +121,12 @@ public class WorkerResponseProcessor implements Processor {
         return xml.toString();
     }
 
-    private String workerFieldsToXml(Worker w) {
+    private String workerFieldsToXml(WorkerDTO w) {
         StringBuilder xml = new StringBuilder();
         xml.append("<id>").append(w.getId()).append("</id>");
         xml.append("<firstName>").append(escapeXml(w.getFirstName())).append("</firstName>");
         xml.append("<lastName>").append(escapeXml(w.getLastName())).append("</lastName>");
-        xml.append("<dateOfBirth>").append(w.getDateOfBirth() != null ? w.getDateOfBirth().format(DATE_FMT) : "").append("</dateOfBirth>");
+        xml.append("<dateOfBirth>").append(w.getDateOfBirth() != null ? w.getDateOfBirth() : "").append("</dateOfBirth>");
         xml.append("<role>").append(escapeXml(w.getRole())).append("</role>");
         return xml.toString();
     }

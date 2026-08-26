@@ -1,6 +1,6 @@
 package com.company.soaptranslator.camel.processor;
 
-import com.company.workerportal.model.Worker;
+import com.company.workerportal.service.WorkerDTO;
 import com.company.workerportal.service.WorkerServiceRemote;
 import jakarta.ejb.EJB;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -49,7 +49,7 @@ public class WorkerRequestProcessor implements Processor {
                     boolean hasFilter = (searchTerm != null && !searchTerm.isBlank())
                         || dateFrom != null || dateTo != null;
 
-                    Worker[] workers = hasFilter
+                    WorkerDTO[] workers = hasFilter
                         ? workerService.searchWorkers(searchTerm, null, null, false, dateFrom, dateTo)
                         : workerService.getAllWorkers();
                     result.put("data", workers);
@@ -57,12 +57,12 @@ public class WorkerRequestProcessor implements Processor {
                 }
                 case "getWorkerById" -> {
                     Long id = extractId(exchange);
-                    Worker worker = workerService.getWorkerById(id);
+                    WorkerDTO worker = workerService.getWorkerById(id);
                     result.put("data", worker);
                     result.put("success", worker != null);
                 }
                 case "addWorker" -> {
-                    Worker worker = extractWorkerFromSoap(exchange);
+                    WorkerDTO worker = extractWorkerFromSoap(exchange);
                     if (worker != null) {
                         Long newId = workerService.addWorker(worker);
                         result.put("data", newId != null ? newId : -1L);
@@ -74,7 +74,7 @@ public class WorkerRequestProcessor implements Processor {
                 }
                 case "updateWorker" -> {
                     Long id = extractId(exchange);
-                    Worker worker = extractWorkerFromSoap(exchange);
+                    WorkerDTO worker = extractWorkerFromSoap(exchange);
                     if (worker != null && id != null) {
                         boolean success = workerService.updateWorker(id, worker);
                         result.put("data", success);
@@ -165,7 +165,7 @@ public class WorkerRequestProcessor implements Processor {
         return null;
     }
 
-    private Worker extractWorkerFromSoap(Exchange exchange) {
+    private WorkerDTO extractWorkerFromSoap(Exchange exchange) {
         String firstName = extractTextFromSoap(exchange, "firstName");
         String lastName = extractTextFromSoap(exchange, "lastName");
         String dateOfBirth = extractTextFromSoap(exchange, "dateOfBirth");
@@ -176,10 +176,10 @@ public class WorkerRequestProcessor implements Processor {
         }
 
         try {
-            Worker worker = new Worker();
+            WorkerDTO worker = new WorkerDTO();
             worker.setFirstName(firstName);
             worker.setLastName(lastName);
-            worker.setDateOfBirth(LocalDate.parse(dateOfBirth));
+            worker.setDateOfBirth(dateOfBirth);
             worker.setRole(role);
             return worker;
         } catch (Exception e) {

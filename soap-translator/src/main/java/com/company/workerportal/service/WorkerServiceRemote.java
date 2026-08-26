@@ -1,24 +1,23 @@
 package com.company.workerportal.service;
 
-import com.company.workerportal.model.Worker;
 import java.time.LocalDate;
 
 public interface WorkerServiceRemote {
 
-    Worker[] getAllWorkers();
+    WorkerDTO[] getAllWorkers();
 
-    Worker[] searchWorkers(String searchTerm, String role, String sortField,
-                           boolean descending, LocalDate dateFrom, LocalDate dateTo);
+    WorkerDTO[] searchWorkers(String searchTerm, String role, String sortField,
+                               boolean descending, LocalDate dateFrom, LocalDate dateTo);
 
     String[] getDistinctRoles();
 
-    Worker getWorkerById(Long id);
+    WorkerDTO getWorkerById(Long id);
 
-    Long addWorker(Worker worker);
+    Long addWorker(WorkerDTO worker);
 
-    boolean updateWorker(Long id, Worker worker);
+    boolean updateWorker(Long id, WorkerDTO worker);
 
     boolean deleteWorker(Long id);
 
-    String validate(Worker worker);
+    String validate(WorkerDTO worker);
 }
