@@ -2,11 +2,15 @@ package com.company.workerportal.service;
 
 import com.company.workerportal.dao.WorkerDAO;
 import com.company.workerportal.model.Worker;
+import jakarta.ejb.Remote;
+import jakarta.ejb.Stateless;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public class WorkerService {
+@Stateless
+@Remote(WorkerServiceRemote.class)
+public class WorkerService implements WorkerServiceRemote {
 
     private final WorkerDAO workerDAO = new WorkerDAO();
 
