@@ -1,6 +1,6 @@
 package com.company.workerportal.rest;
 
-import com.company.workerportal.model.Worker;
+import com.company.workerportal.service.WorkerDTO;
 import com.company.workerportal.service.WorkerService;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -33,10 +33,10 @@ public class WorkerResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Worker[] getAll(@QueryParam("q") String q,
-                            @QueryParam("role") String role,
-                            @QueryParam("sort") String sort,
-                            @QueryParam("dir") String dir) {
+    public WorkerDTO[] getAll(@QueryParam("q") String q,
+                              @QueryParam("role") String role,
+                              @QueryParam("sort") String sort,
+                              @QueryParam("dir") String dir) {
         boolean descending = "desc".equalsIgnoreCase(dir);
         if (q == null && role == null && sort == null) {
             return workerService.getAllWorkers();
@@ -48,7 +48,7 @@ public class WorkerResource {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOne(@PathParam("id") Long id) {
-        Worker worker = workerService.getWorkerById(id);
+        WorkerDTO worker = workerService.getWorkerById(id);
         if (worker == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorMessage("Worker " + id + " not found"))
@@ -60,7 +60,7 @@ public class WorkerResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response create(Worker worker) {
+    public Response create(WorkerDTO worker) {
         String error = workerService.validate(worker);
         if (error != null) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -76,7 +76,7 @@ public class WorkerResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") Long id, Worker worker) {
+    public Response update(@PathParam("id") Long id, WorkerDTO worker) {
         String error = workerService.validate(worker);
         if (error != null) {
             return Response.status(Response.Status.BAD_REQUEST)
