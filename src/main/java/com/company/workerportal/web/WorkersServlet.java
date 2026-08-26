@@ -1,6 +1,6 @@
 package com.company.workerportal.web;
 
-import com.company.workerportal.model.Worker;
+import com.company.workerportal.service.WorkerDTO;
 import com.company.workerportal.service.WorkerService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -27,10 +27,10 @@ public class WorkersServlet extends HttpServlet {
         String dir = req.getParameter("dir");
         boolean descending = "desc".equalsIgnoreCase(dir);
 
-        Worker[] workers = workerService.searchWorkers(q, role, sort, descending, null, null);
+        WorkerDTO[] workers = workerService.searchWorkers(q, role, sort, descending, null, null);
         String[] roles = workerService.getDistinctRoles();
 
-        List<Worker> workerList = Arrays.asList(workers);
+        List<WorkerDTO> workerList = Arrays.asList(workers);
         List<String> roleList = Arrays.asList(roles);
 
         req.setAttribute("workers", workerList);
