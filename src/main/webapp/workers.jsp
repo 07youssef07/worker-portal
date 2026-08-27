@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.company.workerportal.model.Worker" %>
+<%@ page import="com.company.workerportal.service.WorkerDTO" %>
 <%@ page import="java.util.List" %>
 <%!
     private String sortUrl(String contextPath, String field, String currentSort,
@@ -89,7 +89,7 @@
         <tbody>
         <%
             @SuppressWarnings("unchecked")
-            List<Worker> workers = (List<Worker>) request.getAttribute("workers");
+            List<WorkerDTO> workers = (List<WorkerDTO>) request.getAttribute("workers");
             if (workers == null || workers.isEmpty()) {
         %>
         <tr>
@@ -97,7 +97,7 @@
         </tr>
         <%
             } else {
-                for (Worker w : workers) {
+                for (WorkerDTO w : workers) {
         %>
         <tr>
             <td><%= w.getFirstName() %></td>

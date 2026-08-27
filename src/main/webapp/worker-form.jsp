@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.company.workerportal.model.Worker" %>
+<%@ page import="com.company.workerportal.service.WorkerDTO" %>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +9,7 @@
 </head>
 <body>
 <%
-    Worker worker = (Worker) request.getAttribute("worker");
+    WorkerDTO worker = (WorkerDTO) request.getAttribute("worker");
     boolean isEdit = worker != null && worker.getId() != null;
 %>
 <div class="page">
