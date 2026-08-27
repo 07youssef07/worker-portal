@@ -27,6 +27,10 @@ public class User implements Serializable {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    // Role: "ADMIN" (all operations) or "VIEWER" (read-only operations)
+    @Column(name = "role", nullable = false, length = 50)
+    private String role;
+
     public User() {
     }
 
@@ -52,5 +56,13 @@ public class User implements Serializable {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

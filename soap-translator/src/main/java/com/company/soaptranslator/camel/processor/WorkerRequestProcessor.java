@@ -1,5 +1,6 @@
 package com.company.soaptranslator.camel.processor;
 
+import com.company.workerportal.service.AuthRequest;
 import com.company.workerportal.service.WorkerDTO;
 import com.company.workerportal.service.WorkerServiceRemote;
 import jakarta.ejb.EJB;
@@ -37,6 +38,10 @@ public class WorkerRequestProcessor implements Processor {
         Map<String, Object> result = new HashMap<>();
         result.put("operation", operation);
 
+        AuthRequest caller = new AuthRequest();
+        caller.setUsername(exchange.getIn().getHeader("authenticatedUser", String.class));
+        caller.setPassword(exchange.getIn().getHeader("authenticatedPassword", String.class));
+
         try {
             switch (operation) {
                 case "getAllWorkers" -> {
@@ -50,21 +55,21 @@ public class WorkerRequestProcessor implements Processor {
                         || dateFrom != null || dateTo != null;
 
                     WorkerDTO[] workers = hasFilter
-                        ? workerService.searchWorkers(searchTerm, null, null, false, dateFrom, dateTo)
-                        : workerService.getAllWorkers();
+                        ? workerService.searchWorkers(caller, searchTerm, null, null, false, dateFrom, dateTo)
+                        : workerService.getAllWorkers(caller);
                     result.put("data", workers);
                     result.put("success", true);
                 }
                 case "getWorkerById" -> {
                     Long id = extractId(exchange);
-                    WorkerDTO worker = workerService.getWorkerById(id);
+                    WorkerDTO worker = workerService.getWorkerById(caller, id);
                     result.put("data", worker);
                     result.put("success", worker != null);
                 }
                 case "addWorker" -> {
                     WorkerDTO worker = extractWorkerFromSoap(exchange);
                     if (worker != null) {
-                        Long newId = workerService.addWorker(worker);
+                        Long newId = workerService.addWorker(caller, worker);
                         result.put("data", newId != null ? newId : -1L);
                         result.put("success", newId != null);
                     } else {
@@ -76,7 +81,7 @@ public class WorkerRequestProcessor implements Processor {
                     Long id = extractId(exchange);
                     WorkerDTO worker = extractWorkerFromSoap(exchange);
                     if (worker != null && id != null) {
-                        boolean success = workerService.updateWorker(id, worker);
+                        boolean success = workerService.updateWorker(caller, id, worker);
                         result.put("data", success);
                         result.put("success", success);
                     } else {
@@ -86,7 +91,7 @@ public class WorkerRequestProcessor implements Processor {
                 }
                 case "deleteWorker" -> {
                     Long id = extractId(exchange);
-                    boolean success = workerService.deleteWorker(id);
+                    boolean success = workerService.deleteWorker(caller, id);
                     result.put("data", success);
                     result.put("success", success);
                 }
@@ -99,7 +104,7 @@ public class WorkerRequestProcessor implements Processor {
         } catch (Exception e) {
             result.put("data", null);
             result.put("success", false);
-            result.put("error", "EJB call failed: " + e.getMessage());
+            result.put("error", e.getMessage() != null ? e.getMessage() : e.toString());
         }
 
         exchange.getIn().setBody(result);

@@ -6,7 +6,8 @@
 CREATE TABLE IF NOT EXISTS app_user (
     id            BIGSERIAL PRIMARY KEY,
     username      VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL
+    password_hash VARCHAR(255) NOT NULL,
+    role          VARCHAR(50) NOT NULL DEFAULT 'VIEWER'
 );
 
 CREATE TABLE IF NOT EXISTS worker (
@@ -27,3 +28,9 @@ INSERT INTO worker (first_name, last_name, date_of_birth, role) VALUES
 -- Insert a login user manually after generating a password hash with
 -- GenerateHashTool (see README.md), e.g.:
 -- INSERT INTO app_user (username, password_hash) VALUES ('admin', '<paste-hash-here>');
+--
+-- Roles: 'ADMIN' (all service operations) or 'VIEWER' (read-only operations).
+-- Example:
+--   UPDATE app_user SET role='ADMIN' WHERE username='admin';
+--   INSERT INTO app_user (username, password_hash, role)
+--   VALUES ('viewer', '<paste-hash-here>', 'VIEWER');

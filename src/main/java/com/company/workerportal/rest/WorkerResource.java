@@ -39,16 +39,16 @@ public class WorkerResource {
                               @QueryParam("dir") String dir) {
         boolean descending = "desc".equalsIgnoreCase(dir);
         if (q == null && role == null && sort == null) {
-            return workerService.getAllWorkers();
+            return workerService.getAllWorkers(null);
         }
-        return workerService.searchWorkers(q, role, sort, descending, null, null);
+        return workerService.searchWorkers(null, q, role, sort, descending, null, null);
     }
 
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getOne(@PathParam("id") Long id) {
-        WorkerDTO worker = workerService.getWorkerById(id);
+        WorkerDTO worker = workerService.getWorkerById(null, id);
         if (worker == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorMessage("Worker " + id + " not found"))
@@ -61,13 +61,13 @@ public class WorkerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(WorkerDTO worker) {
-        String error = workerService.validate(worker);
+        String error = workerService.validate(null, worker);
         if (error != null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorMessage(error))
                     .build();
         }
-        Long newId = workerService.addWorker(worker);
+        Long newId = workerService.addWorker(null, worker);
         worker.setId(newId);
         return Response.status(Response.Status.CREATED).entity(worker).build();
     }
@@ -77,13 +77,13 @@ public class WorkerResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(@PathParam("id") Long id, WorkerDTO worker) {
-        String error = workerService.validate(worker);
+        String error = workerService.validate(null, worker);
         if (error != null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ErrorMessage(error))
                     .build();
         }
-        boolean updated = workerService.updateWorker(id, worker);
+        boolean updated = workerService.updateWorker(null, id, worker);
         if (!updated) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorMessage("Worker " + id + " not found"))
@@ -96,7 +96,7 @@ public class WorkerResource {
     @DELETE
     @Path("/{id}")
     public Response delete(@PathParam("id") Long id) {
-        boolean deleted = workerService.deleteWorker(id);
+        boolean deleted = workerService.deleteWorker(null, id);
         if (!deleted) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(new ErrorMessage("Worker " + id + " not found"))

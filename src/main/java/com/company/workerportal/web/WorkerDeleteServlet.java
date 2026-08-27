@@ -19,7 +19,7 @@ public class WorkerDeleteServlet extends HttpServlet {
             throws ServletException, IOException {
         String idParam = req.getParameter("id");
         if (idParam != null && !idParam.isBlank()) {
-            workerService.deleteWorker(Long.valueOf(idParam));
+            workerService.deleteWorker(null, Long.valueOf(idParam));
         }
         resp.sendRedirect(req.getContextPath() + "/workers");
     }

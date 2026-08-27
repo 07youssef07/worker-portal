@@ -32,6 +32,13 @@ public class WorkerResponseProcessor implements Processor {
                 default -> buildErrorResponse("Unknown operation");
             };
 
+            // Surface an authorization/authentication failure (or any EJB error)
+            // as an explicit SOAP Fault so clients can tell the difference between
+            // an access denial and a normal operation result.
+            if (!success && result.get("error") != null) {
+                soapXml = buildErrorResponse(String.valueOf(result.get("error")));
+            }
+
             exchange.getIn().setBody(soapXml);
             exchange.getIn().setHeader(Exchange.CONTENT_TYPE, "text/xml; charset=UTF-8");
         }
@@ -109,7 +116,7 @@ public class WorkerResponseProcessor implements Processor {
 
     private String buildErrorResponse(String message) {
         return wrapSoapBodyStart()
-            + "<Fault><faultcode>Client</faultcode><faultstring>" + message + "</faultstring></Fault>"
+            + "<Fault><faultcode>Client</faultcode><faultstring>" + escapeXml(message) + "</faultstring></Fault>"
             + wrapSoapBodyEnd();
     }
 

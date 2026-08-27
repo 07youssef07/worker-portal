@@ -21,7 +21,7 @@ public class WorkerFormServlet extends HttpServlet {
 
         String idParam = req.getParameter("id");
         if (idParam != null && !idParam.isBlank()) {
-            WorkerDTO worker = workerService.getWorkerById(Long.valueOf(idParam));
+            WorkerDTO worker = workerService.getWorkerById(null, Long.valueOf(idParam));
             if (worker == null) {
                 resp.sendRedirect(req.getContextPath() + "/workers");
                 return;
@@ -50,7 +50,7 @@ public class WorkerFormServlet extends HttpServlet {
         worker.setDateOfBirth(dobParam);
         worker.setRole(role);
 
-        String error = workerService.validate(worker);
+        String error = workerService.validate(null, worker);
 
         if (error != null) {
             req.setAttribute("worker", worker);
@@ -60,9 +60,9 @@ public class WorkerFormServlet extends HttpServlet {
         }
 
         if (worker.getId() == null) {
-            workerService.addWorker(worker);
+            workerService.addWorker(null, worker);
         } else {
-            workerService.updateWorker(worker.getId(), worker);
+            workerService.updateWorker(null, worker.getId(), worker);
         }
 
         resp.sendRedirect(req.getContextPath() + "/workers");
