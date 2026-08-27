@@ -36,6 +36,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.company</groupId>
+            <artifactId>shared-interfaces</artifactId>
+            <version>1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Apache Camel -->
         <dependency>
             <groupId>org.apache.camel</groupId>
