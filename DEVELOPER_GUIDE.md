@@ -16,9 +16,10 @@ built during the development of the Worker Portal project.
 7. [Authentication](#authentication)
 8. [Filtering Workers](#filtering-workers)
 9. [Project Layout](#project-layout)
-10. [Key Implementation Details](#key-implementation-details)
-11. [Testing the SOAP Endpoint](#testing-the-soap-endpoint)
-12. [Troubleshooting](#troubleshooting)
+10. [Build & Deployment](#build--deployment)
+11. [Key Implementation Details](#key-implementation-details)
+12. [Testing the SOAP Endpoint](#testing-the-soap-endpoint)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -545,6 +546,81 @@ com.company.workerportal.service.WorkerServiceRemote
 ```
 
 These two classes live ONLY in `shared-interfaces.jar`, never inside either WAR.
+
+---
+
+## Build & Deployment
+
+### Prerequisites
+
+- Payara 7 with the domain **running** (`asadmin start-domain domain1`).
+- `shared-interfaces.jar` present in `C:\payara7\glassfish\domains\domain1\lib\`.
+- local Maven repo has `com.company:shared-interfaces:1.0` installed
+  (required for compiling the WARs, because both declare it `provided`).
+
+### Routine redeploy (most code changes)
+
+For changes that stay inside **one** WAR (servlets, REST, DAO, processors, route,
+validation logic, etc.) do exactly what you did before — build and force-deploy:
+
+```powershell
+# worker-portal
+mvn clean package
+asadmin deploy --force target/worker-portal.war
+
+# soap-translator
+mvn clean package
+asadmin deploy --force target/soap-translator.war
+```
+
+**Deploy order rule:** always deploy **worker-portal FIRST** (it provides the EJB
+that soap-translator looks up), then soap-translator. If both are being redeployed,
+do them in this order.
+
+### Shared interfaces JAR change
+
+If you modify `WorkerDTO` or `WorkerServiceRemote` (a **signature** change), the
+procedure is heavier because those classes are cached by the domain classloader:
+
+```powershell
+# 1. Stage the two source files, then compile + jar them
+#    (the .java files normally live in worker-portal's
+#    src/main/java/com/company/workerportal/service/)
+javac -cp <path-to-jakartaee-api.jar> -d <staging> <staging>/com/company/workerportal/service/Worker*.java
+jar cf shared-interfaces.jar -C <staging> com
+
+# 2. Install to local Maven repo (for compile-time deps)
+mvn install:install-file -DgroupId=com.company -DartifactId=shared-interfaces `
+  -Dversion=1.0 -Dpackaging=jar -Dfile=shared-interfaces.jar -DgeneratePom=true
+
+# 3. Copy into the Payara domain library (replace the old file)
+copy shared-interfaces.jar C:\payara7\glassfish\domains\domain1\lib\
+
+# 4. Restart the domain (required for the classloader to pick up the new JAR)
+asadmin restart-domain domain1
+# wait until it finishes coming back up
+
+# 5. Rebuild + redeploy BOTH apps, worker-portal first
+mvn clean package            # in worker-portal
+asadmin deploy --force target/worker-portal.war
+mvn clean package            # in soap-translator
+asadmin deploy --force target/soap-translator.war
+```
+
+> The `javac`/`jar` commands above are on one line each (the `\`` line
+> continuation is only for PowerShell readability).
+
+### Which procedure to use — decision table
+
+| What you changed | Procedure |
+|---|---|
+| worker-portal only (servlets, REST, DAO, security, validation) | Build + deploy worker-portal only. soap-translator is unaffected. |
+| soap-translator only (processors, route, forwarding existing params like `role`/`sort`) | Build + deploy soap-translator only. |
+| `WorkerDTO` or `WorkerServiceRemote` signature | Full shared-JAR procedure above (rebuild → install → copy → restart → redeploy both). |
+
+**Design tip:** keep `WorkerServiceRemote` and `WorkerDTO` stable. To add filtering,
+prefer forwarding parameters the EJB already accepts (`role`, `sort`, `desc`) from
+soap-translator only — that stays a one-WAR change.
 
 ---
 
