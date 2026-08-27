@@ -261,22 +261,87 @@ the same application path.
 
 ### Endpoint
 
+The soap-translator is a **separate WAR** (different context root) from worker-portal:
+
 ```
-POST http://localhost:8090/worker-portal/api/soap/translate
+POST http://localhost:8090/soap-translator/api/soap/translate
      ?operation=<operation>
      [&id=<id>]
 Content-Type: application/xml
-Authorization: Basic <base64>
 ```
 
 ### Request Flow
 
-1. Client sends SOAP XML to `/api/soap/translate`
+1. Client sends SOAP XML to `/soap-translator/api/soap/translate`
 2. `SoapTranslatorResource` extracts `operation` and `id` query parameters
 3. Raw SOAP XML + headers are sent to Camel via `ProducerTemplate`
 4. Camel route processes the message through three stages:
    - **Auth** → **Request processing** → **Response building**
 5. Final SOAP XML is returned to the client
+
+### EJB Remote Communication (cross-WAR)
+
+soap-translator does **not** call worker-portal over REST/HTTP. Instead
+`WorkerRequestProcessor` injects `WorkerServiceRemote` via `@EJB`:
+
+```java
+@EJB(lookup = "java:global/worker-portal/WorkerService!com.company.workerportal.service.WorkerServiceRemote")
+private WorkerServiceRemote workerService;
+```
+
+This is a direct in-JVM EJB Remote call over the Payara shared ORB.
+
+### Shared Interfaces JAR (avoiding classloader conflicts)
+
+`WorkerDTO` and `WorkerServiceRemote` must live in **exactly one** classloader
+so that the CORBA/IIOP types serialized by worker-portal deserialize correctly
+inside soap-translator (and vice-versa). If both WARs package their own copy of
+`com.company.workerportal.service.*`, Payara splits the package across two
+webapp classloaders and you get:
+
+```
+ClassCastException: com.company.workerportal.model.Worker cannot be cast to
+com.company.workerportal.model.Worker (loaders WebappClassLoader @3e5608af vs @20080ed4)
+```
+
+**Solution:** build `shared-interfaces.jar` containing only `WorkerDTO` and
+`WorkerServiceRemote`, install it to Maven local repo, and put the JAR in the
+**Payara domain library**:
+
+```
+C:\payara7\glassfish\domains\domain1\lib\shared-interfaces.jar
+```
+
+Both WARs declare it as a `provided` dependency (compile-time only, not bundled):
+
+```xml
+<dependency>
+    <groupId>com.company</groupId>
+    <artifactId>shared-interfaces</artifactId>
+    <version>1.0</version>
+    <scope>provided</scope>
+</dependency>
+```
+
+The **domain classloader** (parent of both webapp classloaders) loads the single
+copy, so there is no package duplication.
+
+**To rebuild the JAR** (e.g. after changing `WorkerDTO`/`WorkerServiceRemote`):
+
+```
+# copy both .java files into a staging dir, then:
+javac -cp <jakartaee-api.jar> -d <staging> <staging>/com/company/workerportal/service/Worker*.java
+jar cf shared-interfaces.jar -C <staging> com
+
+# install to local Maven + copy into Payara, then RESTART Payara
+mvn install:install-file -DgroupId=com.company -DartifactId=shared-interfaces \
+  -Dversion=1.0 -Dpackaging=jar -Dfile=shared-interfaces.jar -DgeneratePom=true
+cp shared-interfaces.jar C:\payara7\glassfish\domains\domain1\lib\
+```
+
+**Important:** after adding/updating the JAR in `domain1/lib/`, the Payara domain
+must be **restarted**, and worker-portal must be (re)deployed **before**
+soap-translator so the EJB lookup target is present.
 
 ### Supported Operations
 
@@ -298,7 +363,10 @@ Extracts operation-specific data:
 - **addWorker/updateWorker**: `<firstName>`, `<lastName>`, `<dateOfBirth>`, `<role>`
 - **deleteWorker**: `id` from query param or `<id>` in body
 
-Calls `WorkerService` methods and stores results in a `Map<String, Object>`.
+Calls `WorkerServiceRemote` methods (EJB Remote) and stores results in a
+`Map<String, Object>`. Note that cross-WAR, only `WorkerDTO` objects are
+exchanged — the JPA `Worker` entity (with `LocalDate`) is never serialized
+over IIOP because `LocalDate` is not reliably serializable over GIOP/IIOP.
 
 ### Response Building (WorkerResponseProcessor)
 
@@ -420,68 +488,63 @@ are returned — same behavior as before.
 
 ## Project Layout
 
-```
-src/main/java/com/company/workerportal/
-│
-├── model/
-│   ├── Worker.java              JPA entity (id, firstName, lastName, dateOfBirth, role)
-│   └── User.java                JPA entity (id, username, passwordHash)
-│
-├── dao/
-│   ├── WorkerDAO.java           CRUD + search with dynamic JPQL
-│   ├── UserDAO.java             findByUsername
-│   └── JpaUtil.java             EntityManagerFactory singleton
-│
-├── service/
-│   └── WorkerService.java       Business logic, validation, orchestration
-│
-├── security/
-│   ├── PasswordUtil.java        PBKDF2 hash/verify
-│   ├── BasicAuthValidator.java  Validates HTTP Basic Auth against DB
-│   └── GenerateHashTool.java    CLI tool to generate password hashes
-│
-├── camel/                       ← NEW: Apache Camel integration
-│   ├── CamelBootstrap.java      CDI lifecycle for CamelContext
-│   ├── route/
-│   │   └── SoapMessageTranslatorRoute.java    Main Camel route
-│   └── processor/
-│       ├── SoapHeaderAuthProcessor.java        WS-Security auth from SOAP header
-│       ├── WorkerRequestProcessor.java         SOAP XML → WorkerService calls
-│       └── WorkerResponseProcessor.java        WorkerService results → SOAP XML
-│
-├── rest/
-│   ├── RestApplication.java     @ApplicationPath("/api")
-│   ├── WorkerResource.java      JSON REST API (/api/workers)
-│   ├── SoapTranslatorResource.java   ← NEW: SOAP translator entry point
-│   ├── ApiAuthFilter.java       Basic Auth for all /api/** endpoints
-│   └── ErrorMessage.java        Simple JSON error body
-│
-├── web/
-│   ├── LoginServlet.java
-│   ├── LogoutServlet.java
-│   ├── WorkersServlet.java
-│   ├── WorkerFormServlet.java
-│   ├── WorkerDeleteServlet.java
-│   ├── AuthFilter.java          Session-based auth for web UI
-│   └── (SoapAuthFilter.java)    ← REMOVED: was for original JAX-WS service
-│
-└── soap/                        ← REMOVED: original JAX-WS SOAP service
-    ├── (WorkerSoapService.java) ← deleted
-    └── (WorkerSoapDTO.java)     ← deleted
+The system now consists of **two separate WARs** plus a **shared interfaces JAR**:
 
-src/main/webapp/
-├── WEB-INF/
-│   ├── beans.xml                CDI annotated discovery mode
-│   ├── web.xml                  Only session config (old SOAP mapping removed)
-│   └── (persistence.xml)        in resources/META-INF/
-├── login.jsp
-├── workers.jsp
-├── worker-form.jsp
-└── css/style.css
-
-sql/
-└── schema.sql                   Database schema + sample data
 ```
+worker-portal/                          (Git branch: main)
+│
+├── src/main/java/com/company/workerportal/
+│   ├── model/
+│   │   ├── Worker.java              JPA entity (id, firstName, lastName, dateOfBirth, role)
+│   │   └── User.java                JPA entity (id, username, passwordHash)
+│   ├── dao/
+│   │   ├── WorkerDAO.java           CRUD + search with dynamic JPQL
+│   │   ├── UserDAO.java             findByUsername
+│   │   └── JpaUtil.java             EntityManagerFactory singleton
+│   ├── service/
+│   │   └── WorkerService.java       @Stateless @Remote EJB bean, business logic/validation
+│   ├── security/
+│   │   ├── PasswordUtil.java        PBKDF2 hash/verify
+│   │   ├── BasicAuthValidator.java  Validates HTTP Basic Auth against DB
+│   │   └── GenerateHashTool.java    CLI tool to generate password hashes
+│   ├── rest/
+│   │   ├── RestApplication.java     @ApplicationPath("/api")
+│   │   ├── WorkerResource.java      JSON REST API (/api/workers)
+│   │   ├── ApiAuthFilter.java       Basic Auth for all /api/** endpoints
+│   │   └── ErrorMessage.java        Simple JSON error body
+│   └── web/
+│       ├── LoginServlet.java, LogoutServlet.java
+│       ├── WorkersServlet.java, WorkerFormServlet.java, WorkerDeleteServlet.java
+│       └── AuthFilter.java          Session-based auth for web UI
+│
+├── src/main/webapp/                 login.jsp, workers.jsp, worker-form.jsp, css/style.css
+├── src/main/resources/META-INF/persistence.xml
+└── sql/schema.sql                   Database schema + sample data
+
+soap-translator/                     (Git branch: soap-translator — standalone Camel SOAP middleware)
+│
+└── src/main/java/com/company/soaptranslator/
+    ├── camel/
+    │   ├── CamelBootstrap.java      CDI lifecycle for CamelContext
+    │   ├── route/
+    │   │   └── SoapMessageTranslatorRoute.java    Main Camel route
+    │   └── processor/
+    │       ├── SoapHeaderAuthProcessor.java        WS-Security auth from SOAP header
+    │       ├── WorkerRequestProcessor.java         SOAP XML → WorkerServiceRemote calls
+    │       └── WorkerResponseProcessor.java        WorkerDTO results → SOAP XML
+    └── rest/
+        ├── RestApplication.java     @ApplicationPath("/api")
+        └── SoapTranslatorResource.java   SOAP translator entry point
+```
+
+**Shared interfaces JAR** (deployed to Payara `domain1/lib/`, `provided` scope):
+
+```
+com.company.workerportal.service.WorkerDTO
+com.company.workerportal.service.WorkerServiceRemote
+```
+
+These two classes live ONLY in `shared-interfaces.jar`, never inside either WAR.
 
 ---
 
@@ -534,7 +597,7 @@ both Basic Auth and WS-Security validation (they share the `app_user` table).
 ### Postman Setup
 
 1. **Method**: POST
-2. **URL**: `http://localhost:8090/worker-portal/api/soap/translate?operation=getAllWorkers`
+2. **URL**: `http://localhost:8090/soap-translator/api/soap/translate?operation=getAllWorkers`
 3. **Auth tab**: Basic Auth → username: `admin`, password: `admin123`
 4. **Body tab**: raw → XML
 
